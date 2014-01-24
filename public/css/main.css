@@ -1,0 +1,121 @@
+@import url(http://fonts.googleapis.com/css?family=Andada);
+
+html {
+  height:100%
+}
+
+body {
+  color: #ddd;
+  font-family: 'Andada', serif;
+}
+
+h1,h2,h3,h4,h5,h6 {
+  font-family: 'Andada', serif; 
+}
+
+.jumbotron {
+  padding-top: 64px;
+  margin-top: -10px;
+  background-color: rgba(255, 255, 255, 0);
+  background-image: url(../images/greyzz.png);
+  color: #444;
+  margin-bottom: 0px;
+  padding-bottom: 0px;
+  min-height: 240px;
+  border-bottom: 4px solid #FF5600;
+}
+
+.jumbotron h1 {
+  font-size: 48px;
+  padding: 20px 0;
+}
+
+.jumbotron p {
+  font-size: 28px;
+}
+
+i.red {
+  color: #FF5600;
+  padding: 0 12px;
+}
+
+.propose-book {
+  background-color: #FF5600;
+  color: #eee;
+  font-size: 28px;
+  min-height: 64px;
+}
+
+.propose-book p {
+  line-height: 64px;
+}
+
+a.sample {
+  color: inherit;
+  font-style: italic;
+  margin: 0px 12px;
+  text-decoration: none;
+  border-bottom: 2px dashed #eee;
+}
+
+a.hover {
+  text-decoration: none;
+}
+
+.footer {
+  background-color: #222222;
+  color: #eee;
+  font-size: 18px;
+  min-height: 80px;
+  line-height: 80px;
+}
+
+.textual {
+  color: #222;
+  font-size: 18px;
+}
+
+.textual h2 {
+  padding-bottom: 16px;
+}
+
+span.over {
+  text-decoration: line-through; 
+}
+
+.form-signin {
+  max-width: 400px;
+  padding-left: 15px;
+  padding-right: 15px;
+  margin: 0 auto;
+  padding-top: 96px;
+}
+.form-signin .form-signin-heading,
+.form-signin .checkbox {
+  margin-bottom: 10px;
+}
+.form-signin .form-control:focus {
+  z-index: 2;
+}
+.form-signin h1{
+  color: #222;
+}
+form.form-signin button {
+  margin-top: 20px;
+}
+
+.btn-xlarge {
+    padding: 18px 36px;
+    font-size: 32px;
+    line-height: normal;
+}
+
+* {
+  -webkit-border-radius: 0 !important;
+     -moz-border-radius: 0 !important;
+          border-radius: 0 !important;
+}
+
+input.form-control {
+  margin-top: -2px;
+}

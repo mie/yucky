@@ -1,0 +1,61 @@
+.container.screen
+  .row
+    .col-lg-3
+      ul.nav.nav-pills.nav-stacked
+        li.active: a href="#" Top
+        li: a href="#" My Library
+        li: a href="#" Sumbit new link
+    .col-lg-6
+      h2.text-center Enter Reddit link:
+      .text-center#custom-search-input
+        .input-group.input-group-lg.col-md-12
+          input.search-query.form-control#link type="text" placeholder="Search"
+          span.input-group-btn
+            button.btn.btn-danger#submit type="button"
+              span.glyphicon.glyphicon-search
+      -for b in books
+        .row
+          .col-sm-offset-3.col-sm-6
+            -if b.done
+              a href="/epubs/#{b.reddit_id}" =b.thread_name
+              span.label.label-success done
+            -else
+              p =b.thread_name
+              span.label.label-warning queued
+            hr
+      h3.text-center Weekly top
+      ol
+        li
+          span.label.label-success AskReddit
+          |  What photo leaves you speechless?
+        li
+          span.label.label-success NBA
+          |  What photo leaves you speechless?
+        li
+          span.label.label-success AskReddit
+          |  What photo leaves you speechless?
+        li
+          span.label.label-success AWW
+          |  What photo leaves you speechless?
+        li
+          span.label.label-success Pics
+          |  What photo leaves you speechless?
+    .col-lg-3
+      h3.text-center My recent books
+      ol
+        li What photo leaves you speechless?
+        li What photo leaves you speechless?
+        li What photo leaves you speechless?
+        li What photo leaves you speechless?
+        li What photo leaves you speechless?
+      
+javascript:
+  $('#submit').click(function(){
+    $.post('/job',
+      JSON.stringify({link: $('#link').val()}),
+      function(data){
+        console.log(data);
+      },
+      'json'
+    );
+  });

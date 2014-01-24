@@ -1,0 +1,23 @@
+development:
+  sessions:
+    default:
+      database: yucky_dev
+      hosts:
+        - localhost:27017
+  options: #strictly 2 spaces before
+    raise_not_found_error: false #strictly 4 spaces before not 6
+
+test:
+  sessions:
+    default:
+      database: yucky_test
+      hosts:
+        - localhost:27017
+
+production:
+  sessions:
+    default:
+      uri: <%= ENV['MONGOHQ_URL'] %>
+      username: <%= ENV['MONGOHQ_USERNAME'] %>
+      password: <%= ENV['MONGOHQ_PASSWORD'] %>
+      database: yucky
