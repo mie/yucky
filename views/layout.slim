@@ -33,15 +33,22 @@ body
         a.navbar-brand href="/" Alien Reader
       .navbar-collapse.collapse
         -if current_user
-          form.navbar-form.navbar-right
-            button.btn.btn-danger#signout type="button" Sign out
+          .navbar-right
+            ul.nav.navbar-nav
+              li
+                p.navbar-text
+                  | Welcome back, #{current_user.name}!
+              /     a.settings href="/settings"
+              /       i.icon-cog
+              li
+                button.btn.navbar-btn.btn-danger#signout type="button" Sign out
         -else
           form.navbar-form.navbar-right role="form" method="post" action="/u/signin"
             .form-group
               input.form-control type="text" name="email" placeholder="Email"
             .form-group
               input.form-control type="password" name="password" placeholder="Password"
-            button.btn.btn-success type="submit" Sign in
+            button.btn.btn-success.navbar-btn type="submit" Sign in
   ==yield
   javascript:
     $('#signout').click(function(ev){

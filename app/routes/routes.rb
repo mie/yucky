@@ -1,13 +1,17 @@
 class Yucky < Sinatra::Application
 
   get '/' do
-    redirect '/dashboard' if current_user
+    redirect '/top' if current_user
     slim :index
   end
 
-  get '/dashboard' do
-    redirect '/' unless current_user
-    slim :dashboard, :locals => {:books => current_user.books.all}
+  ['submit', 'top', 'library', 'settings'].map do |f|
+  
+    get "/"+f do
+      redirect '/' unless current_user
+      slim f.to_sym, :locals => {:books => current_user.books.all}, :layout => :logged_layout
+    end
+
   end
 
   get '/signup' do
@@ -79,7 +83,7 @@ class Yucky < Sinatra::Application
   post "/u/signup" do
     User.delete_all
     
-    halt [400, "Incomplete parameters"] unless ['password', 'email'].all? {|o| params[o] && params[o] != ''}
+    halt [400, "Incomplete parameters"] unless ['password', 'email', 'name'].all? {|o| params[o] && params[o] != ''}
 
     email = params['email']
     halt [400, "Wrong email"] unless (email.size > 6 && /\w[\w\d_]+@[\w\d\-]+\.\w{2,5}/.match(email))
@@ -92,6 +96,7 @@ class Yucky < Sinatra::Application
 
     user = User.new({:email => email})
     user.password = create_hash(params['password'])
+    user.name = params['name']
     user.token = Digest::SHA2.hexdigest("--#{user.password}--")
     
     halt [500, "Server-side error"] unless user.save

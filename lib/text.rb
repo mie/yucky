@@ -9,6 +9,9 @@ class Text
     @author = json['author']
     @children = []
     @parent_id = json['parent_id']
+    @ups = json['ups']
+    @downs = json['downs']
+    @created_at = json['created']
   end
 
   def images
@@ -98,7 +101,7 @@ end
 
 class OP < Text
 
-  attr_reader :title, :url
+  attr_reader :title, :url, :nsfw, :subreddit, :thumbnail, :media, :is_text
 
   def initialize(json, parent=nil)
     @body = json['selftext'] == "" ? json['url'] : json['selftext']
@@ -109,7 +112,28 @@ class OP < Text
     @title = json['title']
     @score = json['score']
     @url = json['url']
+    @subreddit = json['subreddit']
+    @nsfw = json['over_18']
+    @thumbnail = json['thumbnail']
+    @media = json['media']
+    @is_text = json['self_post']
     super
+  end
+
+  def image
+    m = @url.match(/.+(jpg|jpeg|png|gif)[\?\d]*/)
+    return m.to_a[0] if m
+  end
+
+  def video
+    return @media['oembed']['url'] if @media
+  end
+
+  def youtube_id
+    if @media 
+      m = @media['oembed']['url'].match(/^(?:http(?:s)?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:(?:watch)?\?(?:.*&)?v(?:i)?=|(?:embed|v|vi|user)\/))([^\?&\"'>]+)/)
+      return m[1] if m
+    end
   end
 
   def html_children

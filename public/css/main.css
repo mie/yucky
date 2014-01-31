@@ -7,6 +7,7 @@ html {
 body {
   color: #ddd;
   font-family: 'Andada', serif;
+  background-image: url(../images/306013.png)
 }
 
 h1,h2,h3,h4,h5,h6 {
@@ -44,6 +45,9 @@ i.red {
   color: #eee;
   font-size: 28px;
   min-height: 64px;
+  -webkit-box-shadow: 0px 12px 12px 0px rgba(50, 50, 50, 0.45);
+  -moz-box-shadow:    0px 12px 12px 0px rgba(50, 50, 50, 0.45);
+  box-shadow:         0px 12px 12px 0px rgba(50, 50, 50, 0.45);
 }
 
 .propose-book p {
@@ -58,7 +62,7 @@ a.sample {
   border-bottom: 2px dashed #eee;
 }
 
-a.hover {
+a:hover {
   text-decoration: none;
 }
 
@@ -73,10 +77,14 @@ a.hover {
 .textual {
   color: #222;
   font-size: 18px;
+  height: 100%;
+  min-height: 100%;
+  margin-top: 24px;
 }
 
 .textual h2 {
   padding-bottom: 16px;
+  min-height: 100%;
 }
 
 span.over {
@@ -88,7 +96,7 @@ span.over {
   padding-left: 15px;
   padding-right: 15px;
   margin: 0 auto;
-  padding-top: 96px;
+  margin-top: 96px;
 }
 .form-signin .form-signin-heading,
 .form-signin .checkbox {
@@ -105,9 +113,9 @@ form.form-signin button {
 }
 
 .btn-xlarge {
-    padding: 18px 36px;
-    font-size: 32px;
-    line-height: normal;
+  padding: 18px 36px;
+  font-size: 32px;
+  line-height: normal;
 }
 
 * {
@@ -118,4 +126,9 @@ form.form-signin button {
 
 input.form-control {
   margin-top: -2px;
+}
+
+.transparent {
+  padding: 24px;
+  background-color: rgba(255, 255, 255, 0.8);
 }

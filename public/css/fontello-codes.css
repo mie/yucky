@@ -1,12 +1,17 @@
 
+.icon-picture:before { content: '\e80c'; } /* '' */
+.icon-cog:before { content: '\e804'; } /* '' */
+.icon-lock:before { content: '\e802'; } /* '' */
+.icon-download-cloud:before { content: '\e801'; } /* '' */
+.icon-export-alt:before { content: '\e800'; } /* '' */
 .icon-book:before { content: '\e808'; } /* '' */
-.icon-reddit:before { content: '\e805'; } /* '' */
-.icon-check:before { content: '\e801'; } /* '' */
-.icon-minus-circled:before { content: '\e802'; } /* '' */
-.icon-lock:before { content: '\e804'; } /* '' */
-.icon-user:before { content: '\e80a'; } /* '' */
+.icon-search:before { content: '\e805'; } /* '' */
+.icon-star:before { content: '\e806'; } /* '' */
+.icon-link-ext:before { content: '\e80d'; } /* '' */
+.icon-video:before { content: '\e80f'; } /* '' */
+.icon-bookmarks:before { content: '\e80b'; } /* '' */
 .icon-mobile:before { content: '\e807'; } /* '' */
-.icon-infinity:before { content: '\e800'; } /* '' */
+.icon-doc-text:before { content: '\e80e'; } /* '' */
+.icon-link:before { content: '\e809'; } /* '' */
 .icon-mail:before { content: '\e803'; } /* '' */
-.icon-download:before { content: '\e806'; } /* '' */
-.icon-clock:before { content: '\e809'; } /* '' */
+.icon-user:before { content: '\e80a'; } /* '' */

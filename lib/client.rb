@@ -86,6 +86,7 @@ class RedditClient
     @running = false
     @threads.each {|thr| thr.join }
     build_book
+    return @op
     #upload_book
   end
 
@@ -328,9 +329,18 @@ loop {
   book = Book.where(done: false).asc(:submitted_at).first
   if book
     puts "Got new job: #{book.reddit_id}"
-    c.perform({'reddit_id' => book.reddit_id, 'subreddit' => book.subreddit, 'thread_name' => book.thread_name})
+    op = c.perform({'reddit_id' => book.reddit_id, 'subreddit' => book.subreddit, 'thread_name' => book.thread_name})
     book.done = true
     book.finished_at = Time.now
+    book.subreddit = op.subreddit
+    book.image = op.image
+    book.youtube_id = op.youtube_id if op.youtube_id
+    book.html = op.html
+    book.nsfw = op.nsfw
+    book.title = op.title
+    book.thumbnail = op.thumbnail
+    book.url = op.url
+    book.is_text = op.is_text
     book.save
     puts "Done job: #{book.reddit_id}"
   else
