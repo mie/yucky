@@ -1,0 +1,232 @@
+.container
+  .row.submit
+    .col-lg-4
+      h1.pull-right Submit new link:
+    .col-lg-8
+      .input-group.input-group-lg
+        input.form-control#link type="text" placeholder="http://reddit.com/r/..."
+        span.input-group-btn
+          button.btn.btn-danger#submit type="button"
+            i.icon-search
+#filter
+  .container
+    .row
+      .col-lg-2
+        h1 filter:
+      .col-lg-10
+        a.btn.sidebar-btn#dates href="#" No specific date
+        a.btn.sidebar-btn#subreddits href="#" All subreddits
+.container
+  .row
+    .menu.col-lg-3.subreddits
+      i: a.btn.btn-sm.btn-success.pull-right.subreddit href="#" Any 
+      -for s in subreddits
+        a.btn.btn-sm.btn-danger.pull-right.subreddit href="#" =s
+    .menu.col-lg-3.dates
+      i: a.btn.btn-sm.btn-success.pull-right.date href="#" Any
+      -for d in dates
+        -for part in d.sub(',', '').split(' ')
+          a.btn.btn-sm.btn-info.pull-right.date =part
+    .col-lg-9.content
+      -for b in current_user.books
+        .row.book
+          .col-lg-12
+            -if b.over_18
+              / span.label.label-nsfw NSFW
+              h1.alpha.nsfw =b.title
+            -else
+              h1.alpha =b.title
+            h2
+              span.label.label-danger #{'/r/'+b.subreddit}
+              span.label.label-success
+                =b.num_comments
+                |  comments
+              spam.label.label-info.size
+                =b.size 
+                |  bytes
+              a.btn.btn-danger.download.pull-right href==url("/epubs/#{b.reddit_id}.epub")
+                | download  
+                i.icon-download-cloud
+javascript:
+  $('#submit').click(function(ev){
+    $.ajax({
+      url: "/job",
+      type: 'post',
+      dataType: 'json',
+      data: JSON.stringify({link: $('#link').val()}),
+      success: function(data){
+        location.reload();
+      },
+      error: function(e){
+        console.log('error');
+      }
+    });
+  });
+  $("a.sidebar-btn").click(function(e) {
+    var i = $(this).attr('id');
+    
+    var $bar = $('div.'+i);
+    var $content = $('.content');
+    
+    console.log($bar);
+    if ($bar.is(':visible')){
+      $(this).removeClass('active');
+      $bar.hide();
+    }else{
+      var $sibling = $bar.siblings('.menu');
+      if($sibling.is(':visible')){
+        $sibling.hide();
+        $(this).siblings('.sidebar-btn.active').removeClass('active');
+      }
+      $bar.show();
+      $(this).addClass('active');
+    }
+
+    
+  });
+  $('.content').click(function(){
+    // $('.screen .col-lg-3').switchClass('col-lg-3','col-lg-1');
+    // $('.screen .col-lg-3').children('.items-list').hide();
+    // $('.content').switchClass('col-lg-8', 'col-lg-10');
+  });
+  function search(obj){
+    $.ajax({
+      url: "/j/search",
+      type: 'post',
+      dataType: 'json',
+      data: JSON.stringify(obj),
+      success: function(data){
+        $('.content').empty();
+        $.each(data.books, function(i, obj){
+          var b = data.books[i];
+          $('.content').append('<div class="row"><div class="col-lg-1"></div><div class="col-lg-11"><h1 class="alpha">'+b.title+'</h1><h3>by <i><a href="http://reddit.com/user/'+b.reddit_user+'">'+b.reddit_user+'</a></i></h3></div></div>');
+        });
+      },
+      error: function(e){
+        console.log('error');
+      }
+    });
+  }
+
+  $('.date').click(function(){
+    search({date: $(this).text()});
+  });
+
+  $('.subreddit').click(function(){
+    search({subreddit: $(this).text()});
+  });
+  $('.size').each(function(i, obj){
+    var s = parseInt($(this).text());
+    $(this).text(humanFileSize(s, false));
+  });
+
+  function humanFileSize(bytes, si) {
+    var thresh = si ? 1000 : 1024;
+    if(bytes < thresh) return bytes + ' B';
+    var units = si ? ['kB','MB','GB','TB','PB','EB','ZB','YB'] : ['KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB'];
+    var u = -1;
+    do {
+      bytes /= thresh;
+      ++u;
+    } while(bytes >= thresh);
+    return bytes.toFixed(1)+' '+units[u];
+  };
+
+
+
+
+/ .row
+/   .col-lg-10.col-lg-offset-1
+/     h2.text-center Submit new Reddit link:
+/     .input-group.input-group-lg.col-lg-10.col-lg-offset-1
+/       input.form-control#link type="text" placeholder="http://reddit.com/r/..."
+/       span.input-group-btn
+/         button.btn.btn-danger#submit type="button"
+/           i.icon-search
+
+/ hr
+/ .row
+/   .col-lg-10.col-lg-offset-1
+/     h2.text-center Status of your last 10 submissions
+/     -for b in current_user.books
+/       .row
+/         .col-lg-12
+/           -if b.status == 'done'
+/             .bs-callout.bs-callout-success
+/               span.label.label-success done
+/               span.label.label-info #{'/r/' + b.subreddit}
+/               a href="/epubs/#{b.reddit_id}"  =b.title
+/           -elsif b.status == 'queued'
+/             .bs-callout.bs-callout-warning
+/               span.label.label-warning queued
+/               span.label.label-info #{'/r/' + b.subreddit}
+/               a href="/epubs/#{b.reddit_id}"  =b.link
+/           -elsif b.status == 'error'
+/             .bs-callout.bs-callout-danger
+/               span.label.label-danger error
+/               span.label.label-info #{'/r/' + b.subreddit}
+/               a href="/epubs/#{b.reddit_id}"  =b.link
+        
+
+
+
+/ javascript:
+/   $('#submit').click(function(ev){
+/     $.ajax({
+/       url: "/job",
+/       type: 'post',
+/       dataType: 'json',
+/       data: JSON.stringify({link: $('#link').val()}),
+/       success: function(data){
+/         location.reload();
+/       },
+/       error: function(e){
+/         console.log('error');
+/       }
+/     });
+/   });
+/   $('.date').each(function(i, obj){
+/     var d = Date.parse(obj.innerHTML.replace(/^\s+|\s+$/g,''));
+/     var now = new Date();
+/     var seconds = Math.round((now - d)/1000);
+/     var t = Math.floor(seconds/60); //minutes
+/     var text = ' minutes ago';
+/     if(t > 60){
+/       t = Math.floor(seconds/3600); //hours
+/       text = ' hours ago';
+/       if(t > 24){
+/         t = Math.floor(seconds/3600/24); //days
+/         text = ' days ago';
+/         if(t > 30){
+/           t = Math.floor(seconds/3600/24/30); //months
+/           text = ' months ago';
+/           if(t > 12){
+/             t = Math.floor(seconds/365/24/3600); //months
+/             text = ' years ago';
+/           }
+/         }
+/       }
+/     }
+/     obj.innerHTML=t + text;
+/   });
+/   $('a.link').each(function(i, obj){
+/     var t = $(this).text();
+/     $(this).text(t.trunc(64));
+/   });
+/ / h3.text-center Weekly top
+/ / ol
+/ /   li
+/ /     span.label.label-success AskReddit
+/ /     |  What photo leaves you speechless?
+/ /   li
+/ /     span.label.label-success NBA
+/ /     |  What photo leaves you speechless?
+/ /   li
+/ /     span.label.label-success AskReddit
+/ /     |  What photo leaves you speechless?
+/ /   li
+/ /     span.label.label-success AWW
+/ /     |  What photo leaves you speechless?
+/ /   li
+/ /     span.label.label-success Pics
+/ /     |  What photo leaves you speechless?

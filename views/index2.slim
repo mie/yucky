@@ -1,0 +1,120 @@
+.container
+  .row.submit
+    .col-lg-2
+      h1 New link:
+    .col-lg-10
+      .input-group.input-group-lg
+        span.input-group-btn
+          button.btn.btn-default#options type="button"
+            | options
+            i.icon-down-open
+        input.form-control#link type="text" placeholder="http://reddit.com/r/..."
+        span.input-group-btn
+          button.btn.btn-danger#submit type="button"
+            i.icon-search
+      .bs-callout.submit-options
+        .row
+          .col-lg-3
+            input#only-first type="checkbox"
+          .col-lg-9
+            h3 Get only first-level answers
+        / .row
+        /   .col-lg-3
+        /     input type="checkbox"
+        /   .col-lg-9
+        /     h3
+        /       | Notify me on finishing by email: 
+        /       span.label.label-info =current_user.email
+        .row
+          .col-lg-3
+            input#with-images type="checkbox" checked="checked"
+          .col-lg-9
+            h3 Download images
+        / .row
+        /   .col-lg-3
+        /     select
+        /       option EPUB
+        /       option MOBI
+        /       option EPUB & MOBI
+        /   .col-lg-9
+        /     h3 Convert to this format
+#filter
+  .container
+    .row
+      .col-lg-12
+        ul.list-inline
+          li
+            h2
+              | Total books 
+              span.label.label-danger =total
+          li
+            h2
+              | Selected subreddits 
+              span.label.label-danger#sel-subreddits All
+          li
+            h2
+              | Selected day 
+              span.label.label-danger#sel-date Any
+          li
+            h2
+              | Queued 
+              span.label.label-warning =queued
+
+        / a.btn.sidebar-btn#dates href="#" No specific date
+        /a.btn.sidebar-btn#subreddits href="#" All subreddits
+/ -unless queued == 0
+/   #queued
+/     .container
+/       .row
+/         .col-lg-12.text-center
+/           h3
+/             i
+/               =queued
+/               -if queued == 1
+/                 |  book in queue
+/               -else
+/                 |  books in queue
+/             a.closeq href="#"
+/               i.icon-cancel-circled2
+#library
+  nav.cbp-spmenu.cbp-spmenu-vertical.cbp-spmenu-left#cbp-spmenu-s1
+    h3 Subreddits
+    -for s in subreddits
+      a.subreddit href="#" =s
+  nav.cbp-spmenu.cbp-spmenu-vertical.cbp-spmenu-left#cbp-spmenu-s2
+    h3 Dates
+    #mini-clndr
+    script#calendar-template type="text/template"
+      <div class="controls">
+        <div class="clndr-previous-button">&lsaquo;</div><div class="month"><%= month %></div><div class="clndr-next-button">&rsaquo;</div>
+      </div>
+
+      <div class="days-container">
+        <div class="days">
+          <div class="headers">
+            <% _.each(daysOfTheWeek, function(day) { %><div class="day-header"><%= day %></div><% }); %>
+          </div>
+          <% _.each(days, function(day) { %><div class="<%= day.classes %>" id="<%= day.id %>"><%= day.day %></div><% }); %>
+        </div>
+      </div>
+    / -for d in dates
+    /   a href="#" =d
+  nav.cbp-spmenu.cbp-spmenu-vertical.cbp-spmenu-left#cbp-spmenu-s3
+    h3 Settings
+    form
+      .form-group
+        label email
+        input.form-control#set-email type="email" placeholder="#{current_user.email}"
+      .form-group
+        label password
+        input.form-control#set-password type="password" placeholder="************"
+      / .form-group
+      /   label nofity about new books by email?
+      /   input.form-control type="checkbox"
+      .form-group-btn
+        /input.btn.btn-default type="submit" value="submit"
+        button.btn.btn-default#submit-settings submit
+      #settings-text
+  .container
+    .row
+      .col-lg-12#content

@@ -1,7 +1,6 @@
 require_relative 'text'
-require_relative 'bayfiles'
 
-require 'find'
+require "find"
 require "json"
 require "uri"
 require "faraday"
@@ -11,8 +10,9 @@ require "erb"
 require "thread"
 require "fileutils"
 require "mongoid"
-require 'cgi'
-
+require "mongoid-pagination"
+require "cgi"
+require "date"
 
 require_relative File.join('..', 'app', 'models', 'book.rb')
 
@@ -29,12 +29,11 @@ class RedditClient
     @conn.headers[:user_agent] = 'reddit reader by /u/_siomi'
     @template_dir = File.join('.', 'templates')
     @last_call = Time.now
-    @threads = []
     @comments = []
-    @dirname = Dir[dirname]
+    @base_dir = Dir[dirname]
 
+    @threads = []
     @q = Queue.new
-    @running = true
   end
 
   def perform(options={})
@@ -47,27 +46,37 @@ class RedditClient
             sleep(2)
           else
             url, save_as = @q.pop
-            unless File.exist?(save_as)
-              c = Faraday.new do |conn|
-                conn.options[:timeout] = 30
-                conn.options[:open_timeout] = 30
-                conn.use FaradayMiddleware::FollowRedirects, limit: 4
-              end
+            # unless File.exist?(save_as)
+            puts File.expand_path(save_as)
+            c = Faraday.new do |conn|
+              conn.options[:timeout] = 30
+              conn.options[:open_timeout] = 30
+              conn.adapter Faraday.default_adapter
+              # conn.use FaradayMiddleware::FollowRedirects, limit: 4
+            end
+            begin
               bin = c.get(url).body
               File.open(save_as, 'wb') { |fp| fp.write(bin) }
+            rescue Faraday::Error::TimeoutError => e
+              puts "Downloading failed: timeout error"
             end
-            puts "Downloading #{url} to #{save_as}"
+            # end
+            puts "Downloading #{url} to #{save_as} in thread #{i}"
           end
         end
       }
     end
-    subreddit = options["subreddit"] if options["subreddit"]
-    reddit_id = options["reddit_id"] if options["reddit_id"]
-    thread_name = options["thread_name"] if options["thread_name"]
-    @dir = File.join(@dirname, reddit_id)
-    Dir.mkdir(@dir) unless File.exists?(@dir)
 
-    @url = "http://www.reddit.com/r/#{subreddit}/comments/#{reddit_id}/#{thread_name}/"
+    ['subreddit', 'reddit_id', 'thread_name', 'only_first', 'with_images'].each {|i| instance_variable_set("@#{i}".to_sym, options[i]) }
+
+    # subreddit = options["subreddit"] if options["subreddit"]
+    # reddit_id = options["reddit_id"] if options["reddit_id"]
+    # thread_name = options["thread_name"] if options["thread_name"]
+
+    @book_dir = File.join(@base_dir, @reddit_id)
+    Dir.mkdir(@book_dir) unless File.exists?(@book_dir)
+
+    @url = "http://www.reddit.com/r/#{@subreddit}/comments/#{@reddit_id}/#{@thread_name}/"
 
     data = JSON.parse(get(@url + '.json?sort=top'))
 
@@ -77,12 +86,12 @@ class RedditClient
     @op = OP.new(data[0]['data']['children'][0]['data'])
     
     get_html_images(@op)
-
     @comments << @op
     
-    copy_dir(@template_dir, @dir)
+    copy_dir(@template_dir, @book_dir)
     
     parse_comments(root, @op)
+
     @running = false
     @threads.each {|thr| thr.join }
     build_book
@@ -97,10 +106,9 @@ class RedditClient
       if d['kind'] == 't1'
         c = Comment.new(d['data'])
         parent.children.push(c)
-        @comments.push(c)
+        @comments.push(c) unless @only_first # unshift ?
         get_html_images(c)
-        #get_images(c)
-        parse_comments(d['data']['replies'], c) unless d['data']['replies'] == ''
+        parse_comments(d['data']['replies'], c) unless @only_first || d['data']['replies'] == ''
       elsif d['kind'] == 'more'
         dd = get_more(d['data'])
       end
@@ -117,15 +125,16 @@ class RedditClient
         puts 'reddit heavy load'
       end
       if data
-        @comments += data['json']['data']['things'].map { |c| 
+        cm = data['json']['data']['things'].map { |c| 
           com = Comment.new(c['data'])
           get_html_images(com)
           com
         }
-        t = data['json']['data']['things'].size
-        @comments[-1*(t+1)..-1].each { |c| 
+        @comments += cm unless @only_first
+        cm.each { |c| 
           parent = get_parent(c.parent_id)
-          parent.children.push(c)
+          # parent.children.push(c)
+          parent.add_child(c) if parent
         }
       end
     }
@@ -133,27 +142,31 @@ class RedditClient
   end
 
   def build_book
-    # @dir
     gen_html
 
-    t = @op.title
-    d = Time.now.to_s
-    a = @op.author
-    dir = @dir
-    
+    book_data = {
+      :title => @op.title,
+      :subtitle => "/r/#{@subreddit}, by #{@op.author}",
+      :author => @op.author,
+      :date => Time.now.to_s,
+      :directory => @book_dir,
+      :id => @reddit_id
+    }
+
     builder = GEPUB::Builder.new {
       language 'en'
-      unique_identifier 'http:/example.jp/bookid_in_url', 'BookID', 'URL'
-      title t
-      # subtitle 'This book is just a sample'
+      unique_identifier book_data[:id]
+      #unique_identifier 'http://example.jp/bookid_in_url', 'BookID', 'URL'
+      title book_data[:title]
+      subtitle 'This book is just a sample'
 
-      creator a
+      creator book_data[:author]
 
       # contributors 'Denshobu', 'Asagaya Densho', 'Shonan Densho Teidan', 'eMagazine Torutaru'
 
-      date d
+      date book_data[:date]
 
-      resources(:workdir => dir) {
+      resources(:workdir => book_data[:directory]) {
         
         glob 'css/*.css'
 
@@ -161,115 +174,64 @@ class RedditClient
         glob 'images/*.jpeg'
         glob 'images/*.png'
         glob 'images/*.gif'
+
+        glob 'fonts/*.otf'
         
         #cover_image 'img/image1.jpg' => 'image1.jpg'
-        file 'fonts/Andada-Regular.otf'
-        id 'Andada-Regular'
+        # file 'fonts/Andada-Regular.otf'
+        # id 'Andada-Regular'
 
         ordered {
           file 'out.html'
-          heading t
+          heading book_data[:title]
         }
       }
     }
-    epubname = File.join(@dir, "book.epub")
+    epubname = File.join(@book_dir, "book.epub")
     builder.generate_epub(epubname)
-  end
-
-  def upload_book
-
+    command = Thread.new do
+      # system("#{File.join('vendor', 'kindlegen')} #{epubname}")
+      system("ebook-convert #{epubname} book.azw3")
+    end
+    command.join 
   end
 
   def gen_html
-    template = File.read(File.join(@dir, 'book.erb'))
-    File.open(File.join(@dir, 'out.html'), 'w'){ |f| f.write(ERB.new(template).result(binding)) }
+    template = File.read(File.join(@book_dir, 'book.erb'))
+    File.open(File.join(@book_dir, 'out.html'), 'w'){ |f| f.write(ERB.new(template).result(binding)) }
   end
 
   def get_html_images(comment)
-    b = comment.html.clone
-
-    puts "images : #{comment.html_images.size}"
-    comment.html_images.each{ |i|
+    return nil unless @with_images
+    comment.extract_links.each{ |i|
       unless i.nil?
         puts i
-        out = []
         case i[:type]
           when :direct
-            bget(i[:link], File.join(@dir, 'images', i[:filename]))
-            tp = "<figure><img src='images/#{i[:filename]}'></img><figcaption><a href='#{i[:link]}'>#{i[:text]}</a></figcaption></figure>"
-            b[i[:html]] = tp# "#{i[:text]}<img src='images/#{i[:filename]}'></img>"
-            #b.gsub!('i[:html]', "#{i[:text]}<img src='images/#{i[:filename]}'></img>")
+            bget(i[:link], File.join(@book_dir, 'images', i[:filename]))
+            # tp = "<figure><img src='images/#{i[:filename]}'></img><figcaption><a href='#{i[:link]}'>#{i[:text]}</a></figcaption></figure>"
+            # b[i[:html]] = tp
           when :youtube
-            bget("https://img.youtube.com/vi/#{i[:id]}/hqdefault.jpg", File.join(@dir, 'images', i[:filename]))
-            tp = "<figure><img src='images/#{i[:filename]}'></img><figcaption><a href='#{i[:link]}'>#{i[:text]}</a></figcaption></figure>"
-            b[i[:html]] = tp# "#{i[:text]}<img src='images/#{i[:filename]}'></img>"
-            #b.gsub!('i[:html]', "#{i[:text]}<img src='images/#{i[:filename]}'></img>")
+            bget("https://img.youtube.com/vi/#{i[:id]}/hqdefault.jpg", File.join(@book_dir, 'images', i[:filename]))
+            # tp = "<figure><img src='images/#{i[:filename]}'></img><figcaption><a href='#{i[:link]}'>#{i[:text]}</a></figcaption></figure>"
+            # b[i[:html]] = tp
           when :album
             out = []
+            b = comment.html.clone
             get("http://imgur.com/a/#{i[:id]}/noscript").scan(/<img src="(\/\/i\.imgur\.com\/([a-zA-Z0-9]+\.(jpg|jpeg|png|gif)))"/) { |img|
               saveas = comment.name+img[0].split('/')[-1]
-              bget(img[0], File.join(@dir, 'images', saveas))
-              tp = "<figure><img src='images/#{saveas}'></img><figcaption><a href='#{img[0]}'>image</a></figcaption></figure>"
-              out.push(tp)
-              #out.push("<img src='images/#{saveas}'></img>")
-              #b.gsub!('i[:html]', "#{i[:text]}<img src='images/#{saveas}'></img>")
+              bget(img[0], File.join(@book_dir, 'images', saveas))
+              tp = "<a href='#{img[0]}'><img src='images/#{saveas}'></img><figcaption></a>"
+              out.push(tp)              
             }
             b[i[:html]] = "<p>#{i[:text]}</p>"+out.join
+            comment.html = b
         end
       end
     }
-    comment.html = b
+    
     
   end
-
-
-  # def get_images(comment)
-  #   b = comment.body.clone
-
-  #   comment.images.each{ |i|
-  #     unless i.nil?
-  #       out = []
-  #       case i[:type]
-  #         when :direct
-  #           bget(i[:link], File.join(@dir, 'images', i[:filename]))
-  #           b[i[:md]] = "![#{i[:text]}](images/#{i[:filename]})"
-  #           #b.gsub!('i[:md]', "![#{i[:text]}](images/#{i[:filename]})")
-  #         when :youtube
-  #           bget("https://img.youtube.com/vi/#{i[:id]}/hqdefault.jpg", File.join(@dir, 'images', i[:filename]))
-  #           b[i[:md]] = "![#{i[:text]}](images/#{i[:filename]})"
-  #           #b.gsub!('i[:md]', "![#{i[:text]}](images/#{i[:filename]})")
-  #         when :album
-  #           out = []
-  #           get("http://imgur.com/a/#{i[:id]}/noscript").scan(/<img src="(\/\/i\.imgur\.com\/([a-zA-Z0-9]+\.(jpg|jpeg|png|gif)))"/) { |img|
-  #             saveas = comment.name+img.split('/')[-1]
-  #             bget(img, File.join(@dir, 'images', saveas))
-  #             out.push("![#{i[:text]}](images/#{saveas})")
-  #             #b.gsub!('i[:md]', "![#{i[:text]}](images/#{saveas})")
-  #           }
-  #           b[i[:md]] = "![#{i[:text]}](images/#{saveas})"
-  #       end
-  #     end
-  #   }
-  #   comment.body = b
-
-
-    # comment.images[:direct].each { |link, v|
-    #   bget(v[:download], File.join('epubs', @op.name, 'images', v[:save]))
-    #   comment.body = comment.body.sub(v[:md], "![](images/#{v[:save]})")
-    # }
-    # comment.images[:album].each { |link, v|
-    #   out = []
-    #   get(v[:url]+'/noscript').scan(/<img src="(\/\/i\.imgur\.com\/([a-zA-Z0-9]+\.(jpg|jpeg|png|gif)))"/) { |img|
-    #     saveas = comment.name+img.split('/')[-1]
-    #     while @threads.size >= 4
-    #       sleep(1)
-    #     end
-    #     bget(img, File.join('epubs', @op.name, 'images', saveas))
-    #     out.push("![Image #{out.size}](images/#{saveas})")
-    #   }
-    #   comment.body = comment.body.sub(v[:md], out.join(' '))
-    # }
-  # end
 
   def copy_dir(source_path, target_path)
     Find.find(source_path) do |source|
@@ -280,15 +242,6 @@ class RedditClient
         FileUtils.copy source, target
       end
     end
-  end
-
-  def rget(path, data)
-    # get reddit json
-    puts "getting reddit json"
-    sleep(2) if (Time.now - @last_call < 2)
-    out = @conn.get(path, data).body
-    @last_call = Time.now
-    out
   end
 
   def rpost(path, data)
@@ -302,13 +255,6 @@ class RedditClient
 
   def bget(url, save_as)
     @q.push([url, save_as])
-    # @threads << Thread.new {
-    #   p " ----->>>  #{url}"
-    #   unless File.exist?(save_as)
-    #     bin = @conn.get(url).body
-    #     File.open(save_as, 'wb') { |fp| fp.write(bin) }
-    #   end
-    # }
   end
 
   def get(path)
@@ -318,31 +264,30 @@ class RedditClient
   def get_parent(parent_id)
     com = @comments.select {|c| parent_id == c.name }
     return com[0] if com
+    nil
   end
 
 end
 
-# r = Redis.new
 c = RedditClient.new
 puts "started at #{Time.now}"
 loop {
-  book = Book.where(done: false).asc(:submitted_at).first
+  book = Book.where(status: 'queued').asc(:submitted_at).first
   if book
     puts "Got new job: #{book.reddit_id}"
-    op = c.perform({'reddit_id' => book.reddit_id, 'subreddit' => book.subreddit, 'thread_name' => book.thread_name})
-    book.done = true
+    op = c.perform({'reddit_id' => book.reddit_id, 'subreddit' => book.subreddit, 'thread_name' => book.thread_name, 'only_first' => book.only_first, 'with_images' => book.with_images})
+    book.status = 'done'
     book.finished_at = Time.now
-    book.subreddit = op.subreddit
-    book.image = op.image
-    book.youtube_id = op.youtube_id if op.youtube_id
-    book.html = op.html
-    book.nsfw = op.nsfw
-    book.title = op.title
-    book.thumbnail = op.thumbnail
-    book.url = op.url
-    book.is_text = op.is_text
+
+    [:subreddit, :thumbnail, :over_18, :url, :title, :author, :score, :num_comments, :created_utc].each { |m|
+      book.send("#{m}=".to_sym, op.send("#{m}".to_sym))
+    }
+
+    book.epub_size = File.new(File.join('epubs', book.reddit_id, 'book.epub')).size
+    book.mobi_size = File.new(File.join('epubs', book.reddit_id, 'book.azw3')).size
     book.save
     puts "Done job: #{book.reddit_id}"
+    
   else
     sleep(1)
   end

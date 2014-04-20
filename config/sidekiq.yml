@@ -1,0 +1,11 @@
+---
+:concurrency: 1
+:pidfile: tmp/pids/sidekiq.pid
+development:
+  :concurrency: 1
+  :limits:
+    default: 1
+production:
+  :concurrency: 1
+  :limits:
+    default: 1

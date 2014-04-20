@@ -1,13 +1,11 @@
 @font-face {
-  font-family: "Andada-Regular";
-  font-weight: normal;
-  font-style: normal;
-  src: url("../fonts/Andada-Regular.otf");
+  font-family: 'Merriweather';
+  src: url("../fonts/Merriweather-Regular.otf") format("opentype");
 }
 
 html{
   font: normal 112.5%/1.65 serif;
-  font-family: "Andada-Regular", "Georgia", "Book Antiqua", serif;
+  font-family: "Merriweather", "Georgia", "Book Antiqua", serif;
 }
 body{
   -webkit-hyphens: auto;
@@ -17,35 +15,43 @@ body{
   hyphens: auto;
   word-wrap: break-word;
   color: #444444;
-  background: url("../images/lightpaperfibers.png") repeat scroll left top transparent;
 }
 div.container{
   padding: 12px;
-  width:100%;
   margin:1em auto;
 }
-div.md {
-  max-width: 800px;
+.comment, .op {
+  max-width: 600px;
+  margin-top: -10px;
 }
 img{
-  max-width: 100%;
-  max-height: 640px;
+  max-width: 540px;
+  max-height: auto;
   height: auto;
   display:block;
   margin:auto;
 }
-ul, li{
+/*ul, li{
   list-style:none;
-  margin-left:-16px;
-}
+}*/
+
 div.comment{
+  margin-top: 0px;
   padding: 4px;
   margin-bottom: 12px;
-  margin-top: 12px;
-  margin-left: -18px;
 }
-ul.nested li ul{
-  border-left: 4px solid #999;
+/*ul.nested li ul{
+  padding-left: 8px;
+  border-left: 2px solid #999;
+  border-top: 2px solid #999;
+  padding-top: 8px;
+}*/
+
+.nested .branch .nested{
+  padding-left: 8px;
+  border-left: 2px solid #999;
+  border-top: 2px solid #999;
+  padding-top: 8px;
 }
 
 /* typeplate */
@@ -57,101 +63,60 @@ h5,
 h6 {
   line-height: 1;
   margin-top: 0;
-  text-rendering: optimizeLegibility; /*  voodoo to enable ligatures and kerning | https://developer.mozilla.org/en-US/docs/CSS/text-rendering */
+  text-rendering: optimizeLegibility;
   color: #222222;
 }
 
-
-/**
-* Extend included classes on any element of your
-* choosing for adjusting type based on the scale
-* provided.
-
-* For example:
-
- <h6 class="giga">Awesome Headline</h6>
- <p class="tera">a story about a dude</p>
-
-* Our Type Scale is as follows with px fallbacks
-* for IE 6-8 as they do not understand REM units.
-*
-* 18, 21, 24, 36, 48, 60, 72, 90, 117
-*
-*/
-
-.tera {
-  font-size: 117px;
-  font-size: 6.5rem; /* 117 / 18 = 6.5 */
-  margin-bottom: 0.25385em;
-}
-
-.giga {
-  font-size: 90px;
-  font-size: 5rem; /* 90 / 18 = 5 */
-  margin-bottom: 0.33em;
-}
-
-.mega {
-  font-size: 72px;
-  font-size: 4rem; /* 72 / 18 = 4 */
-  margin-bottom: 0.4125em;
-}
-
-h1,
-.alpha {
+h1 {
   font-size: 60px;
-  font-size: 3.33333rem; /* 60 / 18 = 3.3333 */
+  font-size: 3.33333rem;
   margin-bottom: 0.495em;
 }
 
-h2,
-.beta {
+h2 {
   font-size: 48px;
-  font-size: 2.6667rem; /* 48 / 18 = 2.6667 */
+  font-size: 2.6667rem;
   margin-bottom: 0.61875rem;
 }
 
-h3,
-.gamma {
+h3 {
   font-size: 36px;
-  font-size: 2rem; /* 36 / 18 = 2 */
+  font-size: 2rem;
   margin-bottom: 0.825em;
 }
 
-h4,
-.delta {
+h4 {
   font-size: 24px;
-  font-size: 1.3333333333333333rem; /* 24 / 18 = 1.3333 */
+  font-size: 1.3333333333333333rem;
   margin-bottom: 1.2375em;
 }
 
-h5,
-.epsilon {
+h5 {
   font-size: 21px;
-  font-size: 1.16667rem; /* 21 / 18 = 1.1667 */
-  margin-bottom: 1.4142857142857141em; /* measure( base font-size(18) * base line-height(1.65) ) / current font-size(21) = margin-bottom(1.4142857142857141) */
+  font-size: 1.16667rem;
+  margin-bottom: 1.4142857142857141em;
 }
 
-h6,
-.zeta {
+h6 {
   font-size: 18px;
-  font-size: 1rem; /* 18 = 18 × 1 */
-  margin-bottom: 1.65em; /* measure( base font-size(18) * base line-height(1.65) ) / current font-size(18) = margin-bottom(1.65) */
+  font-size: 1rem;
+  margin-bottom: 1.65em;
+
 }
 
 p {
-  margin: auto auto 1.5em; /* bottom margin for paragraphs */
+  margin: auto auto 1.5em;
 }
 
 p + p {
-  text-indent: 1.5em; /* indent subsequent paragraphs */
-  margin-top: -1.5em; /* no top margin on subsequent paragraphs */
+  text-indent: 1.5em;
+  margin-top: -1.5em;
 }
 
 pre code {
   word-wrap: normal;
   white-space: -moz-pre-wrap;
-  white-space: pre-wrap; /* http://css-tricks.com/almanac/properties/w/whitespace */
+  white-space: pre-wrap;
 }
 
 pre {
@@ -163,29 +128,20 @@ code {
   font-family: monospace;
 }
 
-figure {
-  background: none repeat scroll 0% 0% rgba(177, 185, 196, 0.5);
-  border: 1px solid rgb(177, 185, 196);
-  box-shadow: 0px 0px 1px rgba(255, 255, 255, 0.75);
-  padding: 1.65rem 1.65rem 0px;
-  margin: 2.475rem 0px 1.65rem;
-  border-radius: 0.333333em;
-  display: block;
-  -moz-box-sizing: border-box;
-}
-
-figcaption{
-  font-style: italic;
-  font-size: 1.16667rem;
-  margin-bottom: 1.41429rem;
-}
-
 a {
   text-decoration: none;
-  color: rgb(222, 77, 31);
+  background-color: #444;
+  color: #ddd;
+  padding: 4px;
+  /*color: rgb(222, 77, 31);*/
 }
 
-i.score{
-  color: rgb(222, 77, 31);
-  padding-right: 12px;
+.bad {
+  background-color: #ddd;
+}
+
+@media amzn-kf8{
+  .gif {
+    display: none;
+  }
 }

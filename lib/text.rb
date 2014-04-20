@@ -1,78 +1,107 @@
-class Text
+require "nokogiri"
 
-  attr_reader :id, :author, :name, :parent_id
+class TextElement
+
+  # attr_reader :id, :name, :author, :ups, :downs, :created_utc, :parent_id
   attr_accessor :parent, :children, :body, :html
 
   def initialize(json, parent=nil)
-    @id = json['id']
-    @name = json['name']
-    @author = json['author']
-    @children = []
-    @parent_id = json['parent_id']
-    @ups = json['ups']
-    @downs = json['downs']
-    @created_at = json['created']
-  end
-
-  def images
-    @body.scan(/((\[([^\]]+)\]\()?(https?:\/\/([^\/]+\.\w{2,})\/?([^\)\s]*))\)?)/).map{ |m|
-      p m
-      if r = m[5].match(/(([^\/]+\.(jpg|jpeg|png|gif))[\?\d]*)/)
-        {:type => :direct, :link => m[3], :filename => r[2], :text => m[2], :md => m[0]}
-      elsif m[4] == 'www.youtube.com'
-        if r = m[5].match(/v\=([^\&]+)/)
-          {:type => :youtube, :link => m[3], :filename => "youtube_#{r[1]}.jpg", :id => r[1], :text => m[2], :md => m[0]}
-        end
-      elsif m[4] == 'imgur.com'
-        if r = m[5].match(/(\w*\/)?([\w\d]+)\#?.*/)
-          {:type => :album, :link => m[3], :id => r[2], :text => m[2], :md => m[0]}
-        end
+    ['id', 'name', 'author', 'ups', 'downs', 'created_utc', 'parent_id'].each {|i|
+      name = "@#{i}"
+      instance_variable_set(name, json[i])
+      self.class.send(:define_method, i) do
+        instance_variable_get(name)
       end
     }
+    @children = []
   end
 
-  def html_images
-    return @html.scan(/(<a\shref=\"(https?:\/\/([^\/]+\.\w{2,})\/?([^\)\s]*))\">([^<]+)<\/a>)/).map{ |m|
-      if r = m[3].match(/(([^\/]+\.(jpg|jpeg|png|gif))[\?\d]*)/)
-        {:type => :direct, :link => m[1], :filename => r[2], :text => m[4], :html => m[0]}
-      elsif m[2] == 'www.youtube.com'
-        if r = m[3].match(/v\=([^\&]+)/)
-          {:type => :youtube, :link => m[1], :filename => "youtube_#{r[1]}.jpg", :id => r[1], :html => m[0], :text => m[4]}
+  def add_child(c)
+    @children << c unless @children.any?{|cl| cl.id == c.id}
+  end
+
+  def extract_links
+    doc = Nokogiri::HTML.fragment(@html)
+    i = 0
+    # d = {:direct => [], :youtube => [], :album => []}
+    links = doc.css('a').map{ |link|
+      m = link['href'].match(/https?:\/\/([^\/]+)\/?([^\)\s]*)/)
+      next unless m
+      # if r = m[2].match(/(([^\/]+\.(jpg|jpeg|png|gif))[\?\d]*)/)
+      if r = m[2].match(/(([^\/]+\.(jpg|jpeg|png))[\?\d]*)/)
+        # d[:direct].push({:link => m[0], :filename => "d#{@id}_#{i}.#{r[3]}"})
+        out = {:type => :direct, :link => m[0], :filename => "d#{@id}_#{i}.#{r[3]}", :text => link.text.strip, :html => link.to_html}
+      elsif m[1] == 'www.youtube.com'
+        if r = m[2].match(/v\=([^\&|^#]+)/)
+          # d[:youtube].push({:link => m[0], :filename => "y#{@id}_#{i}.jpg"})
+          out = {:type => :youtube, :link => m[0], :filename => "y#{@id}_#{i}.jpg", :id => r[1], :html => link.to_html, :text => link.text.strip}
         end
-      elsif m[2] == 'youtu.be'
-        if r = m[3].match(/([^\?]+)/)
-          {:type => :youtube, :link => m[1], :filename => "youtube_#{r[1]}.jpg", :id => r[1], :html => m[0], :text => m[4]}
-        end      
-      elsif m[2] == 'imgur.com'
-        if r = m[3].match(/(\w*\/)?([\w\d]+)\#?.*/)
+      elsif m[1] == 'youtu.be'
+        if r = m[2].match(/([^\?]+)/)
+          # d[:youtube].push({:link => m[0], :filename => "y#{@id}_#{i}.jpg"})
+          out = {:type => :youtube, :link => m[0], :filename => "y#{@id}_#{i}.jpg", :id => r[1], :html => link.to_html, :text => link.text.strip}
+        end
+      # elsif m[1] == 'gfycat.com'
+      #   if r = m[2].match(/([\w]+)/)
+      #     out = {:type => :direct, :link => "http://giant.gfycat.com/#{m[0]}.gif", :filename => "g#{@id}_#{i}.gif", :text => link.text.strip, :html => link.to_html}
+      #   end
+      elsif m[1] == 'imgur.com'
+        if r = m[2].match(/(\w*\/)?([\w\d]+)\#?.*/)
           if !r[1].nil?
-            {:type => :album, :link => m[1], :id => r[2], :html => m[0], :text => m[4]}
+            # d[:album].push({:id => r[2], :html => link.to_html, :text => link.text.strip})
+            out = {:type => :album, :link => m[0], :id => r[2], :html => link.to_html, :text => link.text.strip}
           else
-            {:type => :direct, :link => "http://i.imgur.com/#{r[2]}.jpg", :filename => "#{r[2]}.jpg", :id => r[2], :html => m[0], :text => m[4]}
+            # d[:direct].push({:link => "http://i.imgur.com/#{r[2]}.jpg", :filename => "d#{@id}_#{i}.jpg"})
+            out = {:type => :direct, :link => "http://i.imgur.com/#{r[2]}.jpg", :filename => "#{@id}_#{r[2]}.jpg", :id => r[2], :html => link.to_html, :text => link.text.strip}
           end
         end
       end
-    } if has_links?
-    []
+      if out && out[:filename]
+        # <figure><img src='images/#{i[:filename]}'></img><figcaption><a href='#{i[:link]}'>#{i[:text]}</a></figcaption></figure>
+        figure = doc.document.create_element('div')
+        a = doc.document.create_element('a')
+        a['href'] = out[:link]
+        a.content = link.text.strip
+        img = doc.document.create_element('img')
+        img['src'] = "images/#{out[:filename]}"
+        # link.replace img
+        figure.add_child(a)
+        figure.add_child(img)
+        link.replace(figure)
+        @html = doc.to_html
+        i += 1
+      end
+      out
+    }
+    return links
   end
 
   def has_children?
     @children.size > 0
   end
 
-  def has_links?
-    @body.include?('http://')
+  def html_children
+    #  on #{Time.at(@created_utc).strftime('%e %b %Y, %H:%M')}
+    score = 1
+    if @ups
+      score = @ups
+      if @downs
+        score -= @downs
+      end
+    end
+    # out = "<li><div class='comment#{' bad' if score<0}  '><h6 class='user'>#{score} | by #{@author}</h6>#{CGI.unescapeHTML(@html)}</div>"
+    # out += "<ul class='nested'>"+@children.map { |child| child.html_children }.join+"</ul>" if has_children?
+    # out += "</li>"
+    out = "<div class='branch'><div class='comment#{' bad' if score<0}  '><h6 class='user'>#{score} | by #{@author}</h6>#{CGI.unescapeHTML(@html)}</div>"
+    out += "<div class='nested'>"+@children.map { |child| child.html_children }.join+"</div>" if has_children?
+    out += "</div>"
+    out
   end
 
-  def html_children
-    #CGI.unescapeHTML
-    out = "<li><div class='comment'><h5 class='epsilon'><i class='score'>#{@score}</i>#{@author}</h4>#{CGI.unescapeHTML(@html)}</div>"
-    out += "<ul class='nested'>"+@children.map { |child| child.html_children }.join+"</ul>"
-    out += "</li>"
-
-    # out = "<div class='nested'><div class='comment'><h4 class='delta'><i class='score'>#{@score}</i>#{@author}</h4>#{CGI.unescapeHTML(@html)}</div>"
-    # out += @children.map { |child| child.html_children }.join
-    # out += "</div>"
+  def children_list
+    out = "<li><div class='second comment'><h5 class='epsilon'><i class='score'>#{@score}</i>#{@author}</h5>#{CGI.unescapeHTML(@html)}</div></li>"
+    out += @children.map { |child| child.children_list }.join
+    out
   end
 
   def traverse(&block)
@@ -80,66 +109,40 @@ class Text
     @children.each { |child| child.traverse(&block) }
   end
 
-  private
-
 end
 
-class Comment < Text
+class Comment < TextElement
 
   def initialize(json, parent=nil)
-    @body = json['body'] || ''
     html = json['body_html']
-    #html['&'] = '&amp;'
-    #@html = HTMLEntities.new.decode(html)
     @html = html.nil? ? '' : CGI.unescapeHTML(html)
-    #@html = html.gsub('&lt', '<').gsub('&gt', '>')
-    @score = ''#json['ups'] - json['downs']
     super
   end
 
 end
 
-class OP < Text
+class OP < TextElement
 
-  attr_reader :title, :url, :nsfw, :subreddit, :thumbnail, :media, :is_text
+  attr_reader :title, :score, :num_comments, :subreddit, :over_18, :thumbnail, :url
 
   def initialize(json, parent=nil)
-    @body = json['selftext'] == "" ? json['url'] : json['selftext']
+    ['title', 'score', 'num_comments', 'subreddit', 'over_18', 'thumbnail', 'url'].each {|i|
+      name = "@#{i}"
+      instance_variable_set(name, json[i])
+      self.class.send(:define_method, i) do
+        instance_variable_get(name)
+      end
+    }
     html = json['selftext_html'].nil? ? '<a href="'+ json['url'] + '">'+json['title']+'</a>' : json['selftext_html']
-    #html.gsub('&', '&amp;')
     @html = CGI.unescapeHTML(html)
-    #@html = html.gsub('&lt', '<').gsub('&gt', '>')
-    @title = json['title']
-    @score = json['score']
-    @url = json['url']
-    @subreddit = json['subreddit']
-    @nsfw = json['over_18']
-    @thumbnail = json['thumbnail']
-    @media = json['media']
-    @is_text = json['self_post']
     super
-  end
-
-  def image
-    m = @url.match(/.+(jpg|jpeg|png|gif)[\?\d]*/)
-    return m.to_a[0] if m
-  end
-
-  def video
-    return @media['oembed']['url'] if @media
-  end
-
-  def youtube_id
-    if @media 
-      m = @media['oembed']['url'].match(/^(?:http(?:s)?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:(?:watch)?\?(?:.*&)?v(?:i)?=|(?:embed|v|vi|user)\/))([^\?&\"'>]+)/)
-      return m[1] if m
-    end
   end
 
   def html_children
-    #CGI.unescapeHTML
-    out = "<h2 class='beta'>#{@title}</h2><div class='op'><h4 class='delta'><i class='score'>#{@score}</i>#{@author}</h4>#{@html}</div>"
-    out += "<ul class='nested'>"+@children.map { |child| child.html_children }.join+"</ul>"
+    # out = "<h2>#{@title}</h2><div class='op'><h6>#{@score} | #{@author}, on #{Time.at(@created_utc).strftime('%e %b %Y, %H:%M')}</h6>#{@html}</div><hr/>"
+    # out += "<ul class='nested'>"+@children.map { |child| child.html_children }.join+"</ul>"
+    out = "<h2>#{@title}</h2><div class='op'><h6>#{@score} | #{@author}, on #{Time.at(@created_utc).strftime('%e %b %Y, %H:%M')}</h6>#{@html}</div><hr/>"
+    out += "<div class='nested'>"+@children.map { |child| child.html_children }.join+"</div>"
   end
 
 end

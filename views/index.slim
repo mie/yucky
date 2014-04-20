@@ -11,9 +11,36 @@
           | Read it with your favorite reader app on any device
         p.lead
           i.red.icon-export-alt
-          | Discover and share top picks
-      .col-lg-2
+          | Keep it in your personal library
+        h2
+          span.label.label-danger Still waiting?
+          span.label.label-info Why wait?
+          span.label.label-success Go ahead!
+      .col-lg-2.redd
         img src="images/reddit-alien.png"
+.textual
+  .container
+    form.form-horizontal role="form" method="post" action="/u/signup"
+      .row
+        .col-lg-8.text-center
+          .row
+            .col-lg-2.form-label
+              h2: span.label.label-danger email
+            .col-lg-6.form-input
+              input.input-lg.form-control type="email" placeholder="Email address" name="email"
+          .row
+            .col-lg-2.form-label
+              h2: span.label.label-success password
+            .col-lg-6.form-input
+              input.input-lg.form-control type="password" placeholder="Password" name="password"
+            .col-lg-4
+              button.btn.btn-lg.btn-success.pull-left type="submit" Sign up
+        .col-lg-4
+          -unless msg.nil?
+            div class="alert alert-#{msg[:type]}"
+              button.close type="button" data-dismiss="alert" aria-hidden="true" &times;
+              p =msg[:txt]
+
 .propose-book
   .container
     .row
@@ -22,11 +49,6 @@
           | Need a sample book? What about:
           a.sample href="#" What is the most offensive insult you know?
           i.icon-download-cloud
-.textual
-  .container
-    .row
-      .col-lg-4.col-lg-offset-4.text-center.transparent
-        h2 Why wait?
-        a.btn.btn-xlarge.btn-success href="/signup" Sign up now!
+
 javascript:
   $('.screen').height($(document).height() - $('.navbar').height());

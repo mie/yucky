@@ -1,0 +1,97 @@
+h2.text-center Library
+-if books.count == 0
+  h3.text-center
+    | No books yet, try to 
+    a href='/submit' add a reddit link
+-for b in books
+  .row.list-item
+    .col-lg-3.text-center
+      h2.labels.text-right
+        span.label.label-danger #{'/r/'+b.subreddit}
+        br
+        span.label.label-warning
+          i.icon-up-dir
+          =b.score
+        br
+        span.label.label-success.date =b.submitted_at
+      /img.img-thumbnail.thumbnail src==url('images/no_image.png')
+    .col-lg-8.details
+      h2
+        -if b.image
+          i.icon-picture &nbsp;
+        -elsif b.youtube_id
+          i.icon-video &nbsp;
+        -else
+          i.icon-doc-text &nbsp; 
+        =b.title
+      h3
+        a href="http://reddit.com/u/#{b.reddit_user}" =b.reddit_user 
+        |  сreated this thread  
+        a.date href="#{b.link}" =b.created_at 
+      a.btn.btn-mini.btn-primary href==url("/epubs/#{b.reddit_id}.epub") Download
+      button.btn.btn-mini.toggle Show original post
+      .item
+        -if b.image
+          .row
+            .col-lg-1
+              i.red.icon-picture
+            .col-lg-11
+              a href="#{b.url}" =b.url
+          .row
+            .col-lg-12
+              img.img-thumbnail src="#{b.image}"
+        -elsif b.youtube_id
+          .row
+            .col-lg-1
+              i.red.icon-video
+            .col-lg-11
+              a href="#{b.url}" =b.url
+          .row
+            .col-lg-12
+              .flex-video.widescreen style="margin: 0 auto;text-align:center;"
+                iframe allowfullscreen="" src="http://www.youtube.com/embed/#{b.youtube_id}?feature=player_detailpage" frameborder="0"
+        -else
+          .row
+            .col-lg-1
+              i.red.icon-doc-text
+            .col-lg-11
+              a href="#{b.url}" =b.url
+          -if b.is_text
+            .row
+              .col-lg-12
+                .reddit-text
+                  ==b.html
+javascript:
+  $('.date').each(function(i, obj){
+    var d = Date.parse(obj.innerHTML.replace(/^\s+|\s+$/g,''));
+    var now = new Date();
+    var seconds = Math.round((now - d)/1000);
+    var t = Math.floor(seconds/60); //minutes
+    var text = t == 1 ? ' minute ago' : ' minutes ago';
+    if(t > 60){
+      t = Math.floor(seconds/3600); //hours
+      text = t == 1 ? ' hour ago' : ' hours ago';
+      if(t > 24){
+        t = Math.floor(seconds/3600/24); //days
+        text = t == 1 ? ' day ago' : ' days ago';
+        if(t > 30){
+          t = Math.floor(seconds/3600/24/30); //months
+          text = t == 1 ? ' month ago' : ' months ago';
+          if(t > 12){
+            t = Math.floor(seconds/365/24/3600); //months
+            text = t == 1 ? ' year ago' : ' years ago';
+          }
+        }
+      }
+    }
+    obj.innerHTML= t + text;
+  });
+  $('.toggle').click(function(){
+    var s = $(this).siblings('.item')
+    s.toggle();
+    if(s.css('display') == 'none'){
+      $(this).text('Show original post');
+    }else{
+      $(this).text('Hide original post');
+    }    
+  });
