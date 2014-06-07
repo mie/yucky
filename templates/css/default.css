@@ -31,10 +31,9 @@ img{
   display:block;
   margin:auto;
 }
-/*ul, li{
-  list-style:none;
-}*/
-
+.nested{
+  margin-left: 18px;
+}
 div.comment{
   margin-top: 0px;
   padding: 4px;
@@ -47,12 +46,12 @@ div.comment{
   padding-top: 8px;
 }*/
 
-.nested .branch .nested{
+/*.nested .branch .nested{
   padding-left: 8px;
   border-left: 2px solid #999;
   border-top: 2px solid #999;
   padding-top: 8px;
-}
+}*/
 
 /* typeplate */
 h1,
@@ -133,6 +132,7 @@ a {
   background-color: #444;
   color: #ddd;
   padding: 4px;
+  display: inline;
   /*color: rgb(222, 77, 31);*/
 }
 
@@ -144,4 +144,16 @@ a {
   .gif {
     display: none;
   }
+}
+.lvl0{
+  font-size: 16px;
+}
+.lvl1{
+  font-size: 1.4em;
+}
+.lvl2{
+  font-size: 0.9em;
+}
+.lvl3{
+  font-size: 0.9em;
 }

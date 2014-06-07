@@ -6,6 +6,7 @@ class User
   field :name, type: String
   field :token, type: String
   field :password, type: String
+  field :google_access, type: Hash, default: {}
 
   has_many :books
 

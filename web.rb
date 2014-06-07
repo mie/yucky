@@ -25,6 +25,10 @@ class Yucky < Sinatra::Application
   enable :sessions
   set :session_secret, '*&(^B234'
 
+  G_CLIENT_ID = "288778683705-oopjglihb463be9md31ko98u4c2spfbk.apps.googleusercontent.com"
+  G_CLIENT_SECRET = "GnCXqjVxzCU7SXDaPTKmM1C_"
+  G_REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob"
+
 end
 
 Dir[File.join(File.dirname(__FILE__), "app", "**", '*.rb')].each do |file|

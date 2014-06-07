@@ -87,11 +87,15 @@ function show_data(d){
           $('<li>', {text: 'score: '+b.score})
         ).append(
           $('<li>').append(
-            $('<a>', {text: 'EPUB: '+humanFileSize(b.epub_size, true), href: "/books/epub/"+b.reddit_id})
+            $('<a>', {text: 'EPUB: '+humanFileSize(b.epub_size, true), href: "/books/cloud/"+b.reddit_id+".epub"})
           )
         ).append(
           $('<li>').append(
-            $('<a>', {text: 'MOBI: '+humanFileSize(b.mobi_size, true), href: "/books/mobi/"+b.reddit_id})
+            $('<a>', {text: 'MOBI: '+humanFileSize(b.mobi_size, true), href: "/books/google/"+b.reddit_id+".mobi"})
+          )
+        ).append(
+          $('<li>').append(
+            $('<a>', {text: 'Google Drive', href: "/books/google/"+b.reddit_id})
           )
         )
       )
@@ -264,7 +268,8 @@ $(document).ready(function(){
   var nextMonth    = moment().add('month', 1).format('YYYY-MM');
 
   // there are a lot of options. the rabbit hole is deep.
+  $('#google-auth').click(function(){
 
-          
+  });          
 
 });

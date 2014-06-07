@@ -80,7 +80,7 @@ class TextElement
     @children.size > 0
   end
 
-  def html_children
+  def html_children(lvl=1)
     #  on #{Time.at(@created_utc).strftime('%e %b %Y, %H:%M')}
     score = 1
     if @ups
@@ -92,9 +92,22 @@ class TextElement
     # out = "<li><div class='comment#{' bad' if score<0}  '><h6 class='user'>#{score} | by #{@author}</h6>#{CGI.unescapeHTML(@html)}</div>"
     # out += "<ul class='nested'>"+@children.map { |child| child.html_children }.join+"</ul>" if has_children?
     # out += "</li>"
-    out = "<div class='branch'><div class='comment#{' bad' if score<0}  '><h6 class='user'>#{score} | by #{@author}</h6>#{CGI.unescapeHTML(@html)}</div>"
-    out += "<div class='nested'>"+@children.map { |child| child.html_children }.join+"</div>" if has_children?
+
+
+    # out = "<div class='branch'><div class='comment#{' bad' if score<0}  '><h6 class='user'>#{score} | by #{@author}</h6>#{CGI.unescapeHTML(@html)}</div>"
+    # out += "<div class='nested'>"+@children.map { |child| child.html_children }.join+"</div>" if has_children?
+    # out += "</div>"
+
+    out = "<div class='lvl#{lvl<4 ? lvl : '0'}'><div class='comment#{' bad' if score<0}  '><h6 class='user'> #{('v'*(lvl-3) + ' |' if lvl > 3)} #{score} | by #{@author}</h6>#{CGI.unescapeHTML(@html)}</div>"
+    if has_children?
+      out+="<div class='nested'>" if lvl<4
+      out+=@children.map { |child| child.html_children(lvl+1) }.join
+      out+="</div>" if lvl<4
+    end
+
     out += "</div>"
+
+
     out
   end
 

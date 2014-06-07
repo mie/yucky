@@ -90,7 +90,7 @@ class RedditClient
     
     copy_dir(@template_dir, @book_dir)
     
-    parse_comments(root, @op)
+    parse_comments(root, @op, 0)
 
     @running = false
     @threads.each {|thr| thr.join }
@@ -101,18 +101,18 @@ class RedditClient
 
   private
 
-  def parse_comments(root, parent)
+  def parse_comments(root, parent, level)
     root['data']['children'].map { |d|
       if d['kind'] == 't1'
         c = Comment.new(d['data'])
         parent.children.push(c)
         @comments.push(c) unless @only_first # unshift ?
         get_html_images(c)
-        parse_comments(d['data']['replies'], c) unless @only_first || d['data']['replies'] == ''
+        parse_comments(d['data']['replies'], c, level+1) unless @only_first || d['data']['replies'] == ''
       elsif d['kind'] == 'more'
         dd = get_more(d['data'])
       end
-    } if root['data'] && root['data']['children']
+    } if root['data'] && root['data']['children'] && level < 4
   end
 
   def get_more(data)
@@ -190,8 +190,8 @@ class RedditClient
     epubname = File.join(@book_dir, "book.epub")
     builder.generate_epub(epubname)
     command = Thread.new do
-      # system("#{File.join('vendor', 'kindlegen')} #{epubname}")
-      system("ebook-convert #{epubname} book.azw3")
+      system("#{File.join('vendor', 'kindlegen')} #{epubname}")
+      # system("ebook-convert #{epubname} book.azw3")
     end
     command.join 
   end
@@ -221,10 +221,11 @@ class RedditClient
             get("http://imgur.com/a/#{i[:id]}/noscript").scan(/<img src="(\/\/i\.imgur\.com\/([a-zA-Z0-9]+\.(jpg|jpeg|png|gif)))"/) { |img|
               saveas = comment.name+img[0].split('/')[-1]
               bget(img[0], File.join(@book_dir, 'images', saveas))
-              tp = "<a href='#{img[0]}'><img src='images/#{saveas}'></img><figcaption></a>"
+              tp = "<a href='#{img[0]}'><img src='images/#{saveas}'></img></a>"
               out.push(tp)              
             }
-            b[i[:html]] = "<p>#{i[:text]}</p>"+out.join
+            p b, i[:html]
+            CGI.unescapeHTML(b)[i[:html]] = "<p>#{i[:text]}</p>"+out.join
             comment.html = b
         end
       end
@@ -284,7 +285,7 @@ loop {
     }
 
     book.epub_size = File.new(File.join('epubs', book.reddit_id, 'book.epub')).size
-    book.mobi_size = File.new(File.join('epubs', book.reddit_id, 'book.azw3')).size
+    book.mobi_size = File.new(File.join('epubs', book.reddit_id, 'book.mobi')).size
     book.save
     puts "Done job: #{book.reddit_id}"
     

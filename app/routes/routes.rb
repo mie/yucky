@@ -42,25 +42,41 @@ class Yucky < Sinatra::Application
     slim :settings, :layout => :logged_layout
   end
 
-  get '/books/:format/:rid' do
+  get '/books/:cloud/:rid' do
     protected!
 
-    id = params[:rid].split('.')[0]
+    id,format = params[:rid].split('.')
+    halt 404 unless format == 'mobi' || format == 'epub'
+    halt 404 unless params['cloud'] == 'cloud' || params['cloud'] == 'google'
+
+    # code = params['code']
+    # hash = {}
+    # if code && format == 'google'
+    #   hash = g_token_hash(code)
+    #   current_user.google_access = hash
+    #   current_user.save
+    # end
     
     ebook = Book.where(reddit_id: id).first
     redirect '/?not_found' unless ebook
     current_user.add_book(ebook)
+    formats = {
+      'epub' => {:content_type => 'application/epub+zip'},
+      'mobi' => {:content_type => 'application/x-mobipocket-ebook'}
+    }
+
+    if params['cloud'] == 'google'
+      hash = current_user.google_access
+      puts hash
+      redirect g_authorize if hash == {}
+      g_upload_file(hash, File.join('epubs', id, "book.#{format}"), "book.#{format}")
+    else
+      content_type formats[format][:content_type]
+      attachment "book.#{format}"
+      File.read(File.join('epubs', id, "book.#{format}"))
+    end
 
     # if current_user.books.include?(ebook)
-    if params['format'] == 'epub'
-      content_type 'application/epub+zip'
-      attachment "book.epub"
-      File.read(File.join('epubs', id, 'book.epub'))
-    elsif params['format'] == 'mobi'
-      content_type 'application/x-mobipocket-ebook'
-      attachment "book.mobi"
-      File.read(File.join('epubs', id, 'book.mobi'))
-    end
     # else
     #   redirect '/?not_authorised'
     # end
@@ -214,14 +230,6 @@ class Yucky < Sinatra::Application
     dates = books.distinct(:submitted_string)
     bs = books.paginate(:page => page, :limit => 8).desc(:finished_at).all
     {:books => bs.all, :subreddits => subreddits, :dates => dates, :query => type}.to_json
-  end
-
-  # --------------------------
-  # Google Drive authorisation
-  # --------------------------
-
-  def '/cloud/?' do
-    slim :cloud
   end
 
 end

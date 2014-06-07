@@ -22,6 +22,7 @@ head
   script src="js/moment.js"
   script src="js/clndr.min.js"
   script src="js/lib.js"
+  script type="text/javascript" src="https://apis.google.com/js/client.js?onload=handleClientLoad"
 
   /[if lt IE 9]
     script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"
@@ -44,14 +45,13 @@ body
           i.icon-cog
       .navbar-collapse.collapse
         -if current_user
-          .navbar-right
-            ul.nav.navbar-nav
-              li
-                / h2.navbar-text
-                /   a href="/settings"
-                /     i.icon-cog
-              li
-                button.btn.btn-sm.navbar-btn.btn-danger#signout type="button" Sign out  
+          ul.nav.navbar-nav.navbar-right
+            / li
+            /   a.btn.btn-sm.navbar-btn.btn-info#google-auth href="#"
+            /     | Auth with  
+            /     i.icon-goog
+            li
+              button.btn.btn-sm.navbar-btn.btn-danger#signout type="button" Sign out  
 
   / .container.screen
   /   .row
